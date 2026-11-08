@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Initialisation × Inference — wrist-PPG heart rate</title>
+<meta name="description" content="Interactive companion to a manuscript in preparation: clinical-source initialisation and causal temporal inference for wrist-PPG heart-rate estimation, compared in a paired design across two datasets and two networks.">
+<meta name="color-scheme" content="light dark">
+<meta name="referrer" content="no-referrer">
+<meta property="og:title" content="Initialisation × Inference — wrist-PPG heart rate">
+<meta property="og:description" content="A paired evaluation of clinical-source initialisation and causal temporal inference. Manuscript in preparation.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="assets/social-preview.png">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+<script>
+/* Apply a remembered theme before first paint; storage may be unavailable. */
+(function(){try{var t=localStorage.getItem("p2-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar" id="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="#top" aria-label="Back to top">
+      <svg class="brand-glyph" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="9" height="9" rx="2" class="g-b"/><rect x="13" y="2" width="9" height="9" rx="2" class="g-b2"/><rect x="2" y="13" width="9" height="9" rx="2" class="g-u"/><rect x="13" y="13" width="9" height="9" rx="2" class="g-u2"/></svg>
+      <span>Init × Inference</span>
+    </a>
+    <nav class="nav" aria-label="Sections">
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-list">Sections</button>
+      <ul id="nav-list">
+        <li><a href="#design">Design</a></li>
+        <li><a href="#evidence">Evidence</a></li>
+        <li><a href="#participants">Participants</a></li>
+        <li><a href="#duration">Duration</a></li>
+        <li><a href="#demo">Demo</a></li>
+        <li><a href="#figures">Figures</a></li>
+        <li><a href="#provenance">Provenance</a></li>
+      </ul>
+    </nav>
+    <button class="theme-btn" id="theme-btn" type="button" aria-label="Colour theme: automatic. Activate to change.">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+      <span class="theme-label">Auto</span>
+    </button>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="hero" id="top" aria-labelledby="hero-h">
+  <div class="wrap hero-grid">
+    <div class="hero-text">
+      <p class="eyebrow">Wrist-PPG heart-rate estimation · paired evaluation</p>
+      <h1 id="hero-h">Does a better starting point still help once the inference rule changes?</h1>
+      <p class="lede">Initialisation is chosen when a network is trained. Causal recursion is applied afterwards, to the frozen network’s outputs. This page lets you inspect how the two choices were crossed on identical windows, and what the stored results do and do not show.</p>
+      <p class="status-line"><span class="status-pill" data-config="status">Manuscript in preparation</span></p>
+      <div class="link-row" id="link-row" hidden></div>
+    </div>
+    <div class="identity" aria-label="Manuscript identity">
+      <p class="identity-kicker">Manuscript</p>
+      <p class="identity-title" id="ms-title">Clinical-source initialisation and causal temporal inference for wrist-PPG heart-rate estimation: a paired evaluation across two datasets and two networks</p>
+      <p class="authors" id="ms-authors">Xianjin Lin<sup>1</sup>, Liyang Yu<sup>1,*</sup>, Zhonglou Luo<sup>1</sup>, Rui Tian<sup>1</sup>, Wangcai Ding<sup>2,3</sup></p>
+      <ol class="affils">
+        <li>Qinghai University, Xining, Qinghai, China</li>
+        <li>Lanzhou Jiaotong University, Lanzhou, Gansu, China</li>
+        <li>Xi’an Traffic Engineering Institute, Xi’an, Shaanxi, China</li>
+      </ol>
+      <p class="corr">* Corresponding author</p>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="design" aria-labelledby="design-h">
+  <div class="wrap">
+    <header class="sec-head">
+      <p class="sec-num">1 · Paired design</p>
+      <h2 id="design-h">Two choices, made at two different stages</h2>
+      <p class="sec-lede">The same network and target-training recipe start from either <b class="tB">B</b> (random initialisation) or <b class="tU">U</b> (clinical-source initialisation). Every frozen B and U model is then read out twice on the same windows: <b>directly</b>, and through a <b>fixed causal recursion</b>.</p>
+    </header>
+
+    <div class="design-grid">
+      <ol class="stages" aria-label="Stages of the experiment">
+        <li class="stage stage-train">
+          <span class="stage-tag">Training stage</span>
+          <h3>Initialisation</h3>
+          <p><b class="tB">B</b> random weights, or <b class="tU">U</b> weights from supervised heart-rate training on clinical PPG (MIMIC-III-Ext-PPG; no PPG-DaLiA data).</p>
+          <p class="muted">Then the same target recipe on PPG-DaLiA: 15 participant-separated folds × 3 paired repetitions.</p>
+        </li>
+        <li class="stage stage-freeze" aria-hidden="false">
+          <span class="stage-tag">Frozen</span>
+          <p>No parameter is retrained or searched after this point.</p>
+        </li>
+        <li class="stage stage-infer">
+          <span class="stage-tag">Inference stage</span>
+          <h3>Readout</h3>
+          <p><b>Direct</b>: each 10-s window on its own. <b>Recursive</b>: a fixed causal update over contiguous windows, adapted from BeliefPPG, with a transition matrix fitted on the fold’s training participants and shared by B and U.</p>
+        </li>
+      </ol>
+
+      <div class="matrix-card">
+        <div class="matrix" id="matrix" role="group" aria-label="Two-by-two design. Choose a comparison below to highlight the cells it uses.">
+          <div class="mx-corner" aria-hidden="true"></div>
+          <div class="mx-col" id="mx-col-dir">Direct readout</div>
+          <div class="mx-col" id="mx-col-rec">Fixed causal recursion</div>
+          <div class="mx-row" id="mx-row-B"><span class="mk mk-B" aria-hidden="true"></span>B · random</div>
+          <div class="mx-cell" data-cell="B_direct"><span class="mk mk-B" aria-hidden="true"></span><span>B, direct</span></div>
+          <div class="mx-cell" data-cell="B_recursive"><span class="mk mk-B" aria-hidden="true"></span><span>B, recursive</span></div>
+          <div class="mx-row" id="mx-row-U"><span class="mk mk-U" aria-hidden="true"></span>U · clinical-source</div>
+          <div class="mx-cell" data-cell="U_direct"><span class="mk mk-U" aria-hidden="true"></span><span>U, direct</span></div>
+          <div class="mx-cell" data-cell="U_recursive"><span class="mk mk-U" aria-hidden="true"></span><span>U, recursive</span></div>
+          <svg class="mx-arrows" id="mx-arrows" aria-hidden="true"></svg>
+        </div>
+        <div class="chips" role="radiogroup" aria-label="Comparison to highlight" id="design-chips"></div>
+        <p class="matrix-def" id="matrix-def" aria-live="polite"></p>
+        <p class="matrix-actions"><a class="btn btn-ghost" href="#evidence" id="matrix-go">See stored values for this comparison →</a></p>
+        <p class="fineprint">Highlighting only shows which stored comparison answers which question. Nothing is trained or evaluated in your browser.</p>
+      </div>
+    </div>
+
+    <ul class="facts" aria-label="Scope">
+      <li><b>2 × 2</b><span>networks (HRNet, TEMPONet-191) × datasets (PPG-DaLiA, WESAD) = four settings</span></li>
+      <li><b>15</b><span>evaluated participants per dataset, shared by both networks; four settings are not 60 people</span></li>
+      <li><b>4</b><span>endpoints: MAE, F5, E20, C20</span></li>
+      <li><b>WESAD</b><span>evaluation only, same wrist device model as DaLiA; not a cross-device test</span></li>
+    </ul>
+    <details class="disclosure">
+      <summary>Endpoint definitions and what is held fixed</summary>
+      <div class="disc-body">
+        <dl class="defs">
+          <dt>MAE</dt><dd>Mean absolute error, bpm.</dd>
+          <dt>F5</dt><dd>Percentage of windows with absolute error above 5 bpm. Absolute values in %; differences in percentage points (pp).</dd>
+          <dt>E20</dt><dd>Mean positive excess above 20 bpm, i.e. mean of max(0, error − 20), bpm.</dd>
+          <dt>C20</dt><dd>Contribution of errors above 20 bpm to the overall MAE, i.e. mean of error × 1(error &gt; 20) over all windows, bpm. It is not the mean of severe windows, a percentage or a share.</dd>
+        </dl>
+        <p>The 5- and 20-bpm thresholds are analysis definitions, not clinical safety criteria. Within each setting, all comparisons share windows, references and participant weighting. Repetitions are averaged within participant first; participants are then weighted equally. Validation-selected learning-rate variants are a separate analysis and are not part of this 2 × 2.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<section class="band band-alt" id="evidence" aria-labelledby="evidence-h">
+  <div class="wrap">
+    <header class="sec-head">
+      <p class="sec-num">2 · Evidence explorer <span class="badge badge-real">Real frozen results</span></p>
+      <h2 id="evidence-h">Every stored contrast, in every setting</h2>
+      <p class="sec-lede">Four settings × five paired contrasts × four endpoints: 80 stored means, each with its stored descriptive 95% participant-bootstrap interval. Nothing is recomputed here.</p>
+    </header>
+
+    <div class="controls" id="ev-controls">
+      <div class="ctl">
+        <span class="ctl-label" id="lbl-net">Network</span>
+        <div class="seg" role="radiogroup" aria-labelledby="lbl-net" data-key="net"></div>
+      </div>
+      <div class="ctl">
+        <span class="ctl-label" id="lbl-ds">Dataset</span>
+        <div class="seg" role="radiogroup" aria-labelledby="lbl-ds" data-key="ds"></div>
+      </div>
+      <div class="ctl">
+        <span class="ctl-label" id="lbl-m">Endpoint</span>
+        <div class="seg" role="radiogroup" aria-labelledby="lbl-m" data-key="m"></div>
+      </div>
+      <div class="ctl ctl-wide">
+        <label class="ctl-label" for="ev-contrast">Contrast</label>
+        <select id="ev-contrast" class="select"></select>
+      </div>
+    </div>
+    <div class="presets" aria-label="Presets">
+      <span class="ctl-label">Presets</span>
+      <button type="button" class="chip" data-preset="wesad-int">WESAD MAE interaction</button>
+      <button type="button" class="chip" data-preset="wesad-f5">WESAD F5 recursion changes</button>
+      <button type="button" class="chip" data-preset="dalia-ub">HRNet/DaLiA U − B MAE</button>
+      <button type="button" class="chip chip-reset" data-preset="reset">Reset</button>
+      <button type="button" class="chip chip-link" id="ev-copylink">Copy link to this view</button>
+      <span class="copy-status" id="ev-copystatus" role="status" aria-live="polite"></span>
+    </div>
+
+    <div class="ev-grid">
+      <figure class="chart-card" id="ev-figure">
+        <figcaption class="chart-cap" id="ev-cap"></figcaption>
+        <div class="forest-wrap"><svg id="forest" class="forest" role="group" aria-labelledby="ev-cap"></svg></div>
+        <button type="button" class="btn btn-ghost forest-toggle" id="ev-expand" aria-expanded="false" aria-controls="forest" hidden>Show all five contrasts</button>
+        <div class="legend" id="ev-legend"></div>
+        <div class="tooltip" id="ev-tip" role="tooltip" hidden></div>
+      </figure>
+
+      <aside class="readout" id="ev-readout" aria-live="polite" aria-atomic="true"></aside>
+    </div>
+
+    <div class="table-card">
+      <div class="table-head">
+        <h3 id="ev-table-h">Exact values</h3>
+        <p class="muted" id="ev-table-sub"></p>
+      </div>
+      <div class="table-scroll" tabindex="0" role="region" aria-labelledby="ev-table-h">
+        <table class="vtable" id="ev-table"></table>
+      </div>
+      <div class="table-foot">
+        <details class="disclosure disclosure-inline" id="ev-all">
+          <summary>All 80 cells (static, printable)</summary>
+          <div class="disc-body"><div class="table-scroll" tabindex="0" role="region" aria-label="All 80 cells"><table class="vtable vtable-all" id="ev-table-all"></table></div></div>
+        </details>
+        <a class="btn btn-ghost" href="data/evidence_aggregate.csv" download>Download the 80 aggregate cells (CSV)</a>
+      </div>
+    </div>
+
+    
+    <div class="interaction-card" id="interaction" aria-labelledby="int-h">
+      <div class="int-text">
+        <h3 id="int-h">Reading the interaction</h3>
+        <p>The interaction asks whether recursion changes the endpoint by a different amount under U than under B:</p>
+        <p class="formula">(U<sub>rec</sub> − U<sub>direct</sub>) − (B<sub>rec</sub> − B<sub>direct</sub>)</p>
+        <ol class="steps" id="int-steps"></ol>
+        <div class="step-nav">
+          <button type="button" class="btn" id="int-prev">Back</button>
+          <span class="step-count" id="int-count" aria-live="polite"></span>
+          <button type="button" class="btn btn-primary" id="int-next">Next</button>
+        </div>
+      </div>
+      <figure class="int-fig">
+        <figcaption class="chart-cap" id="int-cap"></figcaption>
+        <svg id="int-svg" class="int-svg" role="img" aria-labelledby="int-cap int-desc"></svg>
+        <p class="int-desc" id="int-desc"></p>
+      </figure>
+    </div>
+
+    <details class="disclosure">
+      <summary>How to read the intervals and signs</summary>
+      <div class="disc-body">
+        <p>Intervals are descriptive 95% participant-bootstrap percentile intervals (10,000 paired resamples), conditional on the evaluated fits. They are not significance tests. An interval that includes zero is not evidence of no effect, equivalence or independence.</p>
+        <p>Signs: for U − B, negative values mean lower values under U. For recursive − direct, negative values mean lower values under recursion. For the interaction, positive values mean the recursive-minus-direct change was more positive under U than under B (a smaller reduction or a larger increase); it does not by itself say that either effect is an improvement.</p>
+        <p>The interaction interval is its own stored paired interval. It is never formed from the two separate intervals. No test of whether effects differ between settings or datasets was made.</p>
+        <p>Display values are rounded to three decimals with explicit signs; the data file keeps the stored full-precision values.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<section class="band" id="participants" aria-labelledby="part-h">
+  <div class="wrap">
+    <header class="sec-head">
+      <p class="sec-num">3 · Participants <span class="badge badge-real">Real frozen results</span></p>
+      <h2 id="part-h">Average reductions, individual exceptions</h2>
+      <p class="sec-lede">Recursion lowered mean MAE and C20 under both initialisations in all four settings. Not every participant, or every endpoint, moved the same way.</p>
+    </header>
+    <div class="controls" id="pt-controls">
+      <div class="ctl"><span class="ctl-label" id="lbl-pnet">Network</span><div class="seg" role="radiogroup" aria-labelledby="lbl-pnet" data-key="net"></div></div>
+      <div class="ctl"><span class="ctl-label" id="lbl-pds">Dataset</span><div class="seg" role="radiogroup" aria-labelledby="lbl-pds" data-key="ds"></div></div>
+      <div class="ctl"><span class="ctl-label" id="lbl-pm">Endpoint</span><div class="seg" role="radiogroup" aria-labelledby="lbl-pm" data-key="m"></div></div>
+    </div>
+    <div class="pt-summary" id="pt-summary" aria-live="polite"></div>
+    <div id="pt-body"></div>
+    <details class="disclosure">
+      <summary>What one row represents</summary>
+      <div class="disc-body">
+        <p>Each row is one evaluated person in that dataset, in fixed identifier order. On DaLiA, a row averages the three paired repetitions of the participant’s own held-out fold. On WESAD, which was never used for fitting, each participant is scored by all 15 DaLiA fold models; a row averages the 45 paired fold-model × repetition differences. Repetitions and fold models are fits of the same person, not additional people.</p>
+        <p>DaLiA identifiers are S1–S15; WESAD identifiers are S2–S11 and S13–S17 and follow WESAD numbering. Equal labels do not identify the same person across datasets, and participant overlap between the datasets is unverified. Highlighting links B and U rows within one dataset only.</p>
+        <p>Counts: a participant counts as an increase if the stored difference is above +1×10<sup>−12</sup>, a decrease if below −1×10<sup>−12</sup>; anything in between is reported as a tie and never as an increase.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<section class="band band-alt" id="duration" aria-labelledby="dur-h">
+  <div class="wrap">
+    <header class="sec-head">
+      <p class="sec-num">4 · Severe-error duration <span class="badge badge-real">Real frozen results</span> <span class="badge badge-explore">Exploratory</span></p>
+      <h2 id="dur-h">Less isolated burden, more sustained burden on average</h2>
+      <p class="sec-lede">C20 split into the contributions of isolated (1–3), intermediate (4–14) and sustained (≥15) runs of severe windows (error &gt; 20 bpm, 2-s window starts). Bars are stored participant-equal means in bpm; each stack sums to that readout’s C20.</p>
+    </header>
+    <div class="dur-legend" id="dur-legend"></div>
+    <div class="dur-grid" id="dur-grid"></div>
+    <details class="disclosure" id="dur-notes">
+      <summary>Evidence notes for the duration decomposition</summary>
+      <div class="disc-body">
+        <p><b>Separately classified.</b> Runs were classified separately for direct and recursive readout, so a window can change class or stop being severe. The bars describe how C20 is redistributed among duration classes; they do not track individual errors from one class into another, and they cannot separate prolonged, merged, reclassified or newly created errors.</p>
+        <p><b>Descriptive co-occurrence.</b> In every setting, recursion lowered overall C20 while the average sustained contribution rose. This is a description, not a confirmed mechanism.</p>
+        <p><b>Prespecified rule not met.</b> The frozen summary rule required, for both initialisations, a higher isolated than sustained repair rate in at least 12 of 15 participants. Sustained runs under direct readout occurred in too few participants (rates defined for 4–11), so the rule was not met in any setting, although the isolated-contribution and sensitivity conditions held.</p>
+        <p><b>Plan status.</b> HRNet analyses followed a frozen decomposition plan; TEMPONet-191 applications were additional analyses. All are exploratory.</p>
+        <p id="dur-residual"></p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<section class="band band-synth" id="demo" aria-labelledby="demo-h">
+  <div class="synth-flag" role="note"><span class="synth-dot" aria-hidden="true"></span>Synthetic illustration — not participant data or a validation result</div>
+  <div class="wrap">
+    <header class="sec-head">
+      <p class="sec-num">5 · Recursion lab <span class="badge badge-synth">Synthetic</span></p>
+      <h2 id="demo-h">How a causal recursion carries history forward</h2>
+      <p class="sec-lede">A toy sequence of 60 windows (2-s stride) generated in your browser. At each window a toy “network output” <i>p</i>[t] over 191 one-bpm bins (30–220 bpm) is combined with the previous state through a toy transition prior:</p>
+      <p class="formula formula-lg">s[t] = normalise((T × s[t−1]) ⊙ p[t])</p>
+    </header>
+
+    <div class="lab">
+      <div class="lab-controls">
+        <div class="ctl">
+          <label class="ctl-label" for="lab-preset">Toy preset</label>
+          <select id="lab-preset" class="select"></select>
+        </div>
+        <div class="transport" role="group" aria-label="Playback">
+          <button type="button" class="btn btn-primary" id="lab-play" aria-pressed="false">Play</button>
+          <button type="button" class="btn" id="lab-back" aria-label="Previous window">◀ Step</button>
+          <button type="button" class="btn" id="lab-step" aria-label="Next window">Step ▶</button>
+          <button type="button" class="btn" id="lab-reset">Reset</button>
+        </div>
+        <div class="ctl ctl-scrub">
+          <label class="ctl-label" for="lab-scrub">Window <span id="lab-tlabel"></span></label>
+          <input type="range" id="lab-scrub" min="0" max="59" step="1" value="0">
+        </div>
+      </div>
+      <p class="lab-note" id="lab-note"></p>
+
+      <div class="lab-canvases">
+        <figure class="lab-fig">
+          <figcaption class="chart-cap">Toy heart-rate trace: synthetic target, direct readout of <i>p</i>[t], and readout of the recursive state <i>s</i>[t]</figcaption>
+          <canvas id="lab-trace" aria-hidden="true"></canvas>
+        </figure>
+        <figure class="lab-fig">
+          <figcaption class="chart-cap">Current window: toy output <i>p</i>[t], predicted prior (T × s[t−1], normalised) and updated state <i>s</i>[t]</figcaption>
+          <canvas id="lab-dist" aria-hidden="true"></canvas>
+        </figure>
+      </div>
+      <div class="lab-legend" id="lab-legend"></div>
+      <div class="lab-summary" id="lab-summary" role="status" aria-live="polite"></div>
+
+      <details class="disclosure">
+        <summary>Toy controls (not paper hyperparameters)</summary>
+        <div class="disc-body toy-controls">
+          <div class="ctl">
+            <label class="ctl-label" for="lab-amb">Toy competing-band weight <output id="lab-amb-out" for="lab-amb"></output></label>
+            <input type="range" id="lab-amb" min="0" max="0.9" step="0.01">
+          </div>
+          <div class="ctl">
+            <label class="ctl-label" for="lab-sig">Toy transition spread σ (log-bpm per window) <output id="lab-sig-out" for="lab-sig"></output></label>
+            <input type="range" id="lab-sig" min="0.005" max="0.06" step="0.001">
+          </div>
+          <p class="muted">These sliders change only the toy example. They are not sensitivity analyses and say nothing about the trained models. Changing a slider recomputes the whole 60-window toy run and keeps the current window; changing the preset returns to window 0 and pauses.</p>
+        </div>
+      </details>
+      <details class="disclosure">
+        <summary>What this lab is, and is not</summary>
+        <div class="disc-body">
+          <p>All values are generated deterministically in the browser from fixed toy seeds. The transition matrix uses the same Gaussian-in-log-heart-rate construction and half-bin edges as described in the manuscript, but with a toy spread; it is not one of the trained DaLiA fold matrices. Readouts use the local ±5-bin rule around the most probable bin, with offsets beyond 30 or 220 bpm clamped to the boundary bin (which then enters the average more than once). The state is reset to uniform at window 0 and at any gap.</p>
+          <p>The lab shows the arithmetic of the update. It does not reproduce any participant, any reported effect size, real-time behaviour or a clinical mechanism. The manuscript did not establish lag, smoothing or persistence as the cause of the observed individual increases.</p>
+          <p>The animation never starts by itself, stops at the last window, and pauses when this section leaves the screen or the tab is hidden.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="figures" aria-labelledby="fig-h">
+  <div class="wrap">
+    <header class="sec-head">
+      <p class="sec-num">6 · Figures</p>
+      <h2 id="fig-h">Manuscript figures (review candidate v3)</h2>
+      <p class="sec-lede">Web renderings of the current manuscript figures, without changes to data, labels, cases, colours or intervals. Numbering follows the v3 review candidate and may change.</p>
+    </header>
+    <div class="gallery" id="gallery"></div>
+  </div>
+  <dialog class="lightbox" id="lightbox" aria-labelledby="lb-title">
+    <div class="lb-head">
+      <h3 id="lb-title"></h3>
+      <button type="button" class="btn" id="lb-close" aria-label="Close figure">Close</button>
+    </div>
+    <div class="lb-body"><img id="lb-img" alt=""></div>
+    <p class="lb-cap" id="lb-cap"></p>
+  </dialog>
+</section>
+
+<section class="band band-alt" id="provenance" aria-labelledby="prov-h">
+  <div class="wrap">
+    <header class="sec-head">
+      <p class="sec-num">7 · Provenance</p>
+      <h2 id="prov-h">Where every number comes from</h2>
+    </header>
+    <div class="levels">
+      <div class="level level-real"><span class="badge badge-real">Real frozen results</span><p>Stored participant-equal means and descriptive intervals from completed, frozen evaluations, copied at full precision. Used by the Evidence, Participants and Duration sections.</p></div>
+      <div class="level level-derived"><span class="badge badge-derived">Display transformation</span><p>Deterministic operations only: rounding to three decimals, explicit signs, counting positive and negative stored differences, and scaling to chart axes. No interval, mean or test is recomputed.</p></div>
+      <div class="level level-synth"><span class="badge badge-synth">Synthetic</span><p>The recursion lab, generated in the browser from toy seeds. Not participant data, not a trained model, not a validation result.</p></div>
+    </div>
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Source identifiers">
+      <table class="vtable prov-table" id="prov-table"></table>
+    </div>
+    <div class="cite-card">
+      <h3>Citing this work</h3>
+      <p class="muted">The manuscript is in preparation. There is no DOI, preprint or published version yet.</p>
+      <pre class="cite" id="cite-text"></pre>
+      <button type="button" class="btn" id="cite-copy">Copy citation</button>
+      <span class="copy-status" id="cite-status" role="status" aria-live="polite"></span>
+    </div>
+    <details class="disclosure">
+      <summary>Scope of this page</summary>
+      <div class="disc-body">
+        <p>This page explains results reported in the manuscript; it adds no analyses. It makes no claim of live wearable deployment, clinical safety, alarm performance or a new network architecture. Validation-selected learning-rate results are a separate analysis (Fig. 3) and are not mixed into the primary comparison.</p>
+        <p>The page was built with AI-assisted coding and checking under the authors’ direction. Scientific statements are taken from the manuscript and the stored results and remain subject to author review.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <p><span data-config="status">Manuscript in preparation</span>. Values and figures follow the manuscript review candidate (v3) and may change before publication.</p>
+    <p class="muted" id="build-note"></p>
+  </div>
+</footer>
+
+<script src="data/site-config.js"></script>
+<script src="data/evidence.js"></script>
+<script src="data/duration.js"></script>
+<script src="data/provenance.js"></script>
+<script src="data/figures.js"></script>
+<script src="data/build.js"></script>
+<script src="lab-core.js"></script>
+<script src="app.js"></script>
+<script src="lab.js"></script>
+</body>
+</html>

@@ -100,14 +100,14 @@
   var PRESETS = {
     transient: {
       label: "Transient ambiguous output", seed: 1101, ambiguity: 0.75, sigma: 0.018,
-      note: "For three windows the toy network output puts most of its mass on a distant band. Direct readout jumps; the recursive state stays near its history.",
+      note: "In windows 36–40 s this preset can inject a competing band near 152 bpm into the toy output.",
       truth: function (t) { return 92 + 3 * Math.sin(t / 7); },
       comp: function (t) { return (t >= 18 && t <= 20) ? 152 : null; },
       gaps: []
     },
     persistent: {
       label: "Persistent competing mode", seed: 2202, ambiguity: 0.52, sigma: 0.018,
-      note: "A competing band stays present for many windows while the toy target rises. The recursive state can stay on the wrong band for a while; direct readout switches window by window.",
+      note: "In windows 24–100 s this preset can inject a competing band near 84 bpm while the toy target rises.",
       truth: function (t) { return t < 18 ? 86 : (t < 42 ? 86 + (t - 18) * 1.4 : 119.6); },
       comp: function (t) { return (t >= 12 && t <= 50) ? 84 : null; },
       gaps: []
@@ -126,7 +126,7 @@
     var P = PRESETS[presetId];
     if (!P) throw new Error("unknown preset " + presetId);
     var amb = (ambiguity == null) ? P.ambiguity : ambiguity;
-    var rnd = mulberry32(P.seed), truth = [], ps = [], resets = [];
+    var rnd = mulberry32(P.seed), truth = [], ps = [], resets = [], injected = [];
     for (var t = 0; t < N_STEPS; t++) {
       var y = P.truth(t), jit = (rnd() - 0.5) * 4, wid = 3 + rnd() * 1.5, flick = rnd();
       var comp = P.comp(t), p = new Float64Array(NB);
@@ -135,10 +135,11 @@
       gauss(y + jit, wid, 1 - wc, p);
       if (comp !== null && wc > 0) gauss(comp + (rnd() - 0.5) * 2, 3, wc, p);
       for (var k = 0; k < NB; k++) p[k] += 0.002;   // small floor keeps every update well defined
+      injected.push(comp !== null && wc > 0 ? wc : 0);  // record of what was actually injected (display only)
       truth.push(y); ps.push(normalise(p));
       resets.push(t === 0 || P.gaps.indexOf(t) >= 0);
     }
-    return { preset: presetId, n: N_STEPS, stride: STRIDE_S, truth: truth, p: ps, reset: resets, ambiguity: amb };
+    return { preset: presetId, n: N_STEPS, stride: STRIDE_S, truth: truth, p: ps, reset: resets, injected: injected, ambiguity: amb };
   }
 
   /* Full deterministic run (bounded: 60 steps). */

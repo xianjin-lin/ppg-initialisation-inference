@@ -18,6 +18,7 @@
 
   function compute() {
     var seq = L.makeSequence(state.preset, state.amb);
+    state.seq = seq;
     state.run = L.run(seq, state.sigma);
   }
   function loadPreset(id) {
@@ -25,7 +26,7 @@
     var P = L.PRESETS[id];
     state.preset = id; state.t = 0; state.amb = P.ambiguity; state.sigma = P.sigma;
     presetSel.value = id; amb.value = P.ambiguity; sig.value = P.sigma;
-    compute(); note.textContent = P.note; render(true);
+    compute(); updateNote(); render(true);
   }
 
   // ------------------------------------------------------------- playback
@@ -51,7 +52,7 @@
   reset.addEventListener("click", function () { loadPreset(state.preset); });
   scrub.addEventListener("input", function () { stop(); state.t = Number(scrub.value); render(true); });
   presetSel.addEventListener("change", function () { loadPreset(presetSel.value); });
-  amb.addEventListener("input", function () { state.amb = Number(amb.value); stop(); compute(); render(true); });
+  amb.addEventListener("input", function () { state.amb = Number(amb.value); stop(); compute(); updateNote(); render(true); });
   sig.addEventListener("input", function () { state.sigma = Number(sig.value); stop(); compute(); render(true); });
   document.addEventListener("visibilitychange", function () { if (document.hidden && state.playing) { stop(); render(true); } });
   if ("IntersectionObserver" in window) {
@@ -72,13 +73,50 @@
   }
   function font(px, w) { return (w || "500") + " " + px + "px " + css("--sans"); }
 
+  /* Windows where the generator actually injected a competing band (weight > 0), as contiguous runs [t0, t1]. */
+  function injectedRuns() {
+    var inj = state.seq ? state.seq.injected : [], runs = [], start = null;
+    for (var t = 0; t < L.N_STEPS; t++) {
+      var on = inj[t] > 0;
+      if (on && start === null) start = t;
+      if (!on && start !== null) { runs.push([start, t - 1]); start = null; }
+    }
+    if (start !== null) runs.push([start, L.N_STEPS - 1]);
+    return runs;
+  }
+  function hasCompWindows() { var P = L.PRESETS[state.preset]; for (var t = 0; t < L.N_STEPS; t++) if (P.comp(t) !== null) return true; return false; }
+  /* Preset text plus a sentence that matches the current toy weight (no claim about which band is larger). */
+  function updateNote() {
+    var P = L.PRESETS[state.preset], txt = P.note, w = Number(state.amb).toFixed(2);
+    if (hasCompWindows()) {
+      if (!injectedRuns().length) txt += " The toy competing-band weight is 0, so no competing band is injected and nothing is shaded.";
+      else {
+        txt += state.preset === "persistent"
+          ? " It is injected with unnormalised Gaussian weight " + w + " times a per-window factor between 0.75 and 1.25 (capped at 0.9); the main band gets the remainder."
+          : " It is injected with unnormalised Gaussian weight " + w + "; the main band gets 1 − " + w + ".";
+        txt += " Both readouts are the ±5-bin probability-weighted mean around the most probable bin, so the direct readout moves to the competing band only in windows where that band holds the most probable bin." + INJECT_NOTE;
+      }
+    }
+    note.textContent = txt;
+  }
+  var INJECT_NOTE = " The shaded windows are a deliberate synthetic disturbance: they show the arithmetic of the update and do not explain real participant errors.";
+
   function drawTrace() {
     var o = setup(cTrace), g = o.g, w = o.w, h = o.h, R = state.run, n = R.length;
-    var L0 = 46, R0 = 12, T0 = 12, B0 = 36, ymin = 60, ymax = 170;
+    var L0 = 46, R0 = 12, T0 = 24, B0 = 36, ymin = 60, ymax = 170, LABY = 14;
     var all = R.map(function (r) { return [r.truth, r.direct, r.recursive]; }).reduce(function (a, b) { return a.concat(b); }, []);
     ymin = Math.min(ymin, Math.floor(Math.min.apply(null, all) / 10) * 10 - 5); ymax = Math.max(ymax, Math.ceil(Math.max.apply(null, all) / 10) * 10 + 5);
     function X(t) { return L0 + t / (n - 1) * (w - L0 - R0); }
     function Y(v) { return T0 + (ymax - v) / (ymax - ymin) * (h - T0 - B0); }
+    // injected competing-peak windows (derived from the preset's comp(); display only)
+    injectedRuns().forEach(function (run) {
+      var xa = Math.max(L0, X(run[0] - 0.5)), xb = Math.min(w - R0, X(run[1] + 0.5));
+      g.fillStyle = css("--inject"); g.fillRect(xa, T0, xb - xa, h - T0 - B0);
+      g.strokeStyle = css("--inject-edge"); g.lineWidth = 1; g.strokeRect(xa + 0.5, T0 + 0.5, xb - xa - 1, h - T0 - B0 - 1);
+      g.font = font(12.5, "700"); g.fillStyle = css("--ink-2");
+      var lab = "Injected competing peak", tw = g.measureText(lab).width, cx = (xa + xb) / 2;
+      g.textAlign = "left"; g.fillText(lab, Math.max(L0, Math.min(w - R0 - tw, cx - tw / 2)), LABY);
+    });
     g.font = font(13); g.fillStyle = css("--ink-3"); g.strokeStyle = css("--line-2"); g.lineWidth = 1;
     for (var v = Math.ceil(ymin / 20) * 20; v <= ymax; v += 20) { g.beginPath(); g.moveTo(L0, Y(v)); g.lineTo(w - R0, Y(v)); g.stroke(); g.textAlign = "right"; g.fillText(String(v), L0 - 6, Y(v) + 4); }
     g.textAlign = "center";
@@ -88,7 +126,7 @@
     R.forEach(function (r, i) {
       if (r.reset && i > 0) {
         g.strokeStyle = css("--synth"); g.setLineDash([5, 4]); g.lineWidth = 1.6; g.beginPath(); g.moveTo(X(i), T0); g.lineTo(X(i), h - B0); g.stroke(); g.setLineDash([]);
-        g.fillStyle = css("--synth"); g.font = font(12.5, "700"); var lab = "gap: state reset", tw = g.measureText(lab).width, right = X(i) + 5 + tw > w - R0; g.textAlign = right ? "right" : "left"; g.fillText(lab, right ? X(i) - 5 : X(i) + 5, T0 + 12);
+        g.fillStyle = css("--synth"); g.font = font(12.5, "700"); var lab = "gap: state reset", tw = g.measureText(lab).width, right = X(i) + 5 + tw > w - R0; g.textAlign = right ? "right" : "left"; g.fillText(lab, right ? X(i) - 5 : X(i) + 5, LABY);
       }
     });
     // truth
@@ -139,7 +177,7 @@
 
   function legend() {
     var lg = $("#lab-legend"); if (lg.childNodes.length) return;
-    var items = [["truth", "Synthetic target (toy)"], ["dir", "Direct readout of p[t]"], ["rec", "Readout of recursive state s[t]"], ["p", "Toy output p[t]"], ["prior", "Prior T × s[t−1] (normalised)"], ["reset", "Gap: state reset to uniform"]];
+    var items = [["truth", "Synthetic target (toy)"], ["dir", "Direct readout of p[t]"], ["rec", "Readout of recursive state s[t]"], ["p", "Toy output p[t]"], ["prior", "Prior T × s[t−1] (normalised)"], ["reset", "Gap: state reset to uniform"], ["inject", "Injected competing peak (toy disturbance)"]];
     items.forEach(function (it) {
       var s = document.createElementNS("http://www.w3.org/2000/svg", "svg"); s.setAttribute("viewBox", "0 0 28 14"); s.setAttribute("aria-hidden", "true");
       var k = it[0], m;
@@ -149,6 +187,7 @@
       if (k === "rec") mk("line", { x1: 2, y1: 7, x2: 26, y2: 7, style: "stroke:var(--rec);stroke-width:2.4" });
       if (k === "p") mk("rect", { x: 2, y: 3, width: 24, height: 8, style: "fill:var(--dir);opacity:.35" });
       if (k === "prior") mk("line", { x1: 2, y1: 7, x2: 26, y2: 7, style: "stroke:var(--synth);stroke-width:2;stroke-dasharray:6 4" });
+      if (k === "inject") mk("rect", { x: 2, y: 1, width: 24, height: 12, style: "fill:var(--inject);stroke:var(--inject-edge);stroke-width:1" });
       if (k === "reset") mk("line", { x1: 14, y1: 0, x2: 14, y2: 14, style: "stroke:var(--synth);stroke-width:1.6;stroke-dasharray:4 3" });
       var sp = document.createElement("span"); sp.appendChild(s); sp.appendChild(document.createTextNode(it[1])); lg.appendChild(sp);
       void m;
@@ -183,5 +222,5 @@
   }
 
   loadPreset("transient");
-  window.P2LabUI = { state: state, loadPreset: loadPreset, start: start, stop: stop };
+  window.P2LabUI = { state: state, loadPreset: loadPreset, start: start, stop: stop, injectedRuns: injectedRuns };
 })();

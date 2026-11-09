@@ -6,7 +6,7 @@
 
 <p align="center"><a href="https://xianjin-lin.github.io/ppg-initialisation-inference/"><strong>Project&nbsp;page</strong></a> · <a href="#paired-design">Design</a> · <a href="#key-evidence">Key&nbsp;evidence</a> · <a href="#severe-error-duration-exploratory">Duration</a> · <a href="#what-the-project-page-contains">Page&nbsp;guide</a><br><a href="#what-is-and-is-not-released">Released&nbsp;material</a> · <a href="#datasets">Datasets</a> · <a href="#citation">Citation</a></p>
 
-<p align="center"><img src="https://img.shields.io/badge/status-manuscript%20in%20preparation-6b7280" alt="Status: manuscript in preparation"> <img src="https://img.shields.io/badge/content-aggregate%20results%20only-2563a6" alt="Content: aggregate results only"> <img src="https://img.shields.io/badge/site-static%2C%20no%20build%20step-1f3b63" alt="Site: static, no build step"></p>
+<p align="center"><code>Manuscript in preparation</code> · <code>Aggregate results only</code> · <code>Static site, no build step</code></p>
 
 <table align="center">
 <tr>
